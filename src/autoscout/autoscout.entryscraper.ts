@@ -1,7 +1,6 @@
 import * as cheerio from 'cheerio';
 import { EntryScraper } from '../models/entry-scraper.model';
 import { IVehicleEntry } from '../interfaces/IVehicleEntry';
-import { Utils } from '../utils/utils';
 
 export class ASEntryScraper extends EntryScraper {
   platformUrl = 'https://www.autoscout24.hu';

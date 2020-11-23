@@ -1,7 +1,7 @@
-import { IVehicleEntry } from '../interfaces/IVehicleEntry';
-import database from '../db/database';
 import * as Knex from 'knex';
 import Axios from 'axios';
+import database from '../db/database';
+import { IVehicleEntry } from '../interfaces/IVehicleEntry';
 import { Utils } from '../utils/utils';
 
 export abstract class EntryScraper {
