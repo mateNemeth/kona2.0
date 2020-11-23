@@ -1,4 +1,3 @@
-import Axios from 'axios';
 import * as cheerio from 'cheerio';
 import { EntryScraper } from '../models/entry-scraper.model';
 import { IVehicleEntry } from '../interfaces/IVehicleEntry';
@@ -8,13 +7,18 @@ export class ASEntryScraper extends EntryScraper {
   platformUrl = 'https://www.autoscout24.hu';
   queryUrl =
     '/lst/?sort=age&desc=1&offer=J%2CU%2CO%2CD&ustate=N%2CU&size=20&page=1&cy=A&atype=C&ac=0&';
-  baseSleepTime = 2.5;
+  sleepTime = 2.5;
 
-  async scrapeUrl() {
-    const response = await Axios.get<string>(
-      `${this.platformUrl}${this.queryUrl}`
-    );
-    return response.data;
+  async runScraper() {
+    try {
+      const data = await this.scrapeUrl();
+      const processed = this.processData(data);
+      await this.saveData(processed);
+      await Utils.sleep(this.sleepTime * 60 * 1000);
+      this.runScraper();
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   processData(data: string) {
@@ -57,29 +61,5 @@ export class ASEntryScraper extends EntryScraper {
         this.slowDown();
       }
     });
-  }
-
-  async runScraper() {
-    try {
-      const data = await this.scrapeUrl();
-      const processed = this.processData(data);
-      await this.saveData(processed);
-      await Utils.sleep(this.baseSleepTime * 60 * 1000);
-      this.runScraper();
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  private speedUp() {
-    if (this.baseSleepTime >= 0.5) {
-      this.baseSleepTime -= 0.1;
-    }
-  }
-
-  private slowDown() {
-    if (this.baseSleepTime < 25) {
-      this.baseSleepTime += 0.1;
-    }
   }
 }
