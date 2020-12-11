@@ -5,4 +5,4 @@ const ScoutEntryScraper = new ASEntryScraper();
 const ScoutSpecScraper = new ASSpecScraper();
 
 ScoutEntryScraper.runScraper();
-// ScoutSpecScraper.runScraper();
+ScoutSpecScraper.runScraper();

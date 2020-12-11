@@ -3,11 +3,11 @@ import { SpecScraper } from '../models/spec-scraper.model';
 import { IVehicleSpec, IVehicleType } from '../interfaces/interfaces';
 
 export class ASSpecScraper extends SpecScraper {
+  serviceName = 'AS SpecScraper';
   platform = 'https://www.autoscout24.hu';
   sleepTime = 2.5;
 
   async processData(data: string, id: number) {
-    console.log('processing in specscraper')
     const numberPattern = /\d+/g;
     const $ = cheerio.load(data);
     const lookFor = (

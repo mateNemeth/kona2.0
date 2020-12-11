@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { EntryScraper } from '../models/entry-scraper.model';
 import { IVehicleEntry } from '../interfaces/interfaces';
 export class ASEntryScraper extends EntryScraper {
-  serviceName = 'AutoScout EntryScraper';
+  serviceName = 'AS EntryScraper';
   platformUrl = 'https://www.autoscout24.hu';
   queryUrl =
     '/lst/?sort=age&desc=1&offer=J%2CU%2CO%2CD&ustate=N%2CU&size=20&page=1&cy=A&atype=C&ac=0&';

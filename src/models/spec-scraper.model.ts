@@ -6,6 +6,7 @@ import { Utils } from '../utils/utils';
 
 export abstract class SpecScraper {
   abstract processData(data: string, id: number): Promise<{vehicleSpec: IVehicleSpec, vehicleType: IVehicleType}>;
+  abstract serviceName: string;
   abstract sleepTime: number;
   abstract platform: string;
   private maxErrorCount = 0;
@@ -16,30 +17,48 @@ export abstract class SpecScraper {
 
   async runScraper() {
     try {
-      console.log(this.platform);
+      Logger.log(this.serviceName, 'info', 'Finding entries to scrape...')
       const entry = await this.findEntryToScrape();
-      if (!entry) return;
+      if (!entry) {
+        this.slowDown();
+        Logger.log(this.serviceName, 'info', `No new entry found, sleeping for ${this.sleepTime} minutes.`);
+        Utils.sleep(this.sleepTime * 60 * 1000);
+        return this.runScraper();
+      };
+
+      Logger.log(this.serviceName, 'info', 'Entry found! Crawling...');
       const raw = await this.scrapeEntry(entry);
-      if (!raw) return;
+      if (!raw) {
+        this.slowDown();
+        Logger.log(this.serviceName, 'warn', `Something went wrong, retry in ${this.sleepTime} minutes.`)
+      };
+
       const processed = await this.processData(raw.data, entry.id);
-      if (!processed) return;
+      if (!processed) {
+        this.slowDown();
+        Logger.log(this.serviceName, 'warn', `Something went wrong, retry in ${this.sleepTime} minutes.`);
+      };
+
+      Logger.log(this.serviceName, 'info', 'Processing data...');
       const typeId = await this.getTypeId(processed.vehicleType);
       await this.saveProcessed(processed.vehicleSpec, typeId);
       await this.updateAvgMedianPrices(typeId);
       await this.updateQueue(processed.vehicleSpec);
+      this.speedUp();
+      Logger.log(this.serviceName, 'info', `Processing done, sleeping for ${this.sleepTime} minutes.`);
       await Utils.sleep(this.sleepTime * 60 * 1000);
       this.maxErrorCount = 0;
-      this.runScraper();
+      return this.runScraper();
     } catch (e) {
       Logger.log('speclofasz', 'error', e.stack);
       this.maxErrorCount++;
       if (this.maxErrorCount <= 3) {
         Utils.sleep(20000);
-        this.runScraper;
+        return this.runScraper;
       } else {
         Logger.log('speclofasz', 'error', `Error count reached the limit of ${this.maxErrorCount}, sleeping for 10 minutes before retry.`)
         Utils.sleep(600000);
-        this.runScraper;
+        return this.runScraper;
       }
     }
   }
@@ -128,6 +147,18 @@ export abstract class SpecScraper {
       .orWhere('cartype', newer?.id ?? null);
     if (all.length >= 5) {
       return all.map((e) => e.price);
+    }
+  }
+
+  private speedUp() {
+    if (this.sleepTime > 0.20) {
+      this.sleepTime -= 0.1;
+    }
+  }
+
+  private slowDown() {
+    if (this.sleepTime < 15) {
+      this.sleepTime += 0.1;
     }
   }
 }

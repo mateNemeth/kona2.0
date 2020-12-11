@@ -10,7 +10,6 @@ export abstract class EntryScraper {
   abstract platformUrl: string;
   abstract queryUrl: string;
   abstract sleepTime: number;
-  private duplicates = 0;
   private count = 0;
 
 
@@ -18,6 +17,7 @@ export abstract class EntryScraper {
 
   async runScraper() {
     try {
+      this.count = 0;
       Logger.log(this.serviceName, 'info', 'Looking for new entries...')
       const data = await this.scrapeUrl();
       const processed = await this.processData(data);
@@ -40,16 +40,13 @@ export abstract class EntryScraper {
   }
 
   protected async saveData(data: Omit<IVehicleEntry, 'id'>[]) {
-    this.duplicates = 0;
-    this.count = 0;
     for (const item of data) {
       const rows = await this.dbService
         .knex('carlist')
-        .where('platform_id', item.platformId);
+        .where('platform_id', item.platformId)
+        .first();
 
-      if (rows.length >= 1) {
-        this.duplicates++;
-      } else {
+      if(!rows) {
         this.count++;
         await this.dbService.knex('carlist').insert({
           platform: item.platform,
@@ -61,7 +58,7 @@ export abstract class EntryScraper {
   }
 
   private tweakSpeed() {
-    if (this.duplicates >= 5) this.slowDown();
+    if (this.count <= 15) this.slowDown();
     else this.speedUp();
   }
 
@@ -72,7 +69,7 @@ export abstract class EntryScraper {
   }
 
   protected slowDown() {
-    if (this.sleepTime < 25) {
+    if (this.sleepTime < 15) {
       this.sleepTime += 0.1;
     }
   }
