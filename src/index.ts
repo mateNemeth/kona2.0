@@ -4,5 +4,5 @@ import { ASSpecScraper } from './autoscout/autoscout.specscraper';
 const ScoutEntryScraper = new ASEntryScraper();
 const ScoutSpecScraper = new ASSpecScraper();
 
-ScoutEntryScraper.runScraper();
+// ScoutEntryScraper.runScraper();
 ScoutSpecScraper.runScraper();

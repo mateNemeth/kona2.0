@@ -22,7 +22,7 @@ export abstract class SpecScraper {
       if (!entry) {
         this.slowDown();
         Logger.log(this.serviceName, 'info', `No new entry found, sleeping for ${this.sleepTime} minutes.`);
-        Utils.sleep(this.sleepTime * 60 * 1000);
+        await Utils.sleep(this.sleepTime * 60 * 1000);
         return this.runScraper();
       };
 
@@ -30,13 +30,15 @@ export abstract class SpecScraper {
       const raw = await this.scrapeEntry(entry);
       if (!raw) {
         this.slowDown();
-        Logger.log(this.serviceName, 'warn', `Something went wrong, retry in ${this.sleepTime} minutes.`)
+        await Logger.log(this.serviceName, 'warn', `Something went wrong, retry in ${this.sleepTime} minutes.`)
+        return this.runScraper();
       };
 
       const processed = await this.processData(raw.data, entry.id);
       if (!processed) {
         this.slowDown();
         Logger.log(this.serviceName, 'warn', `Something went wrong, retry in ${this.sleepTime} minutes.`);
+        return this.runScraper();
       };
 
       Logger.log(this.serviceName, 'info', 'Processing data...');
@@ -53,11 +55,11 @@ export abstract class SpecScraper {
       Logger.log('speclofasz', 'error', e.stack);
       this.maxErrorCount++;
       if (this.maxErrorCount <= 3) {
-        Utils.sleep(20000);
+        await Utils.sleep(20000);
         return this.runScraper;
       } else {
         Logger.log('speclofasz', 'error', `Error count reached the limit of ${this.maxErrorCount}, sleeping for 10 minutes before retry.`)
-        Utils.sleep(600000);
+        await Utils.sleep(600000);
         return this.runScraper;
       }
     }
@@ -135,11 +137,11 @@ export abstract class SpecScraper {
     const older = await this.dbService
       .knex('cartype')
       .where({ make: type.make, model: type.model, age: type.age - 1 })
-      .first() ?? null;
+      .first();
     const newer = await this.dbService
       .knex('cartype')
       .where({ make: type.make, model: type.model, age: type.age + 1 })
-      .first() ?? null;
+      .first();
     const all = await this.dbService
       .knex('carspec')
       .where('cartype', typeId)
