@@ -2,8 +2,10 @@
   "name": "kona2.0",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
+    "migrate:latest": "./node_modules/.bin/knex migrate:latest",
+    "migrate:rollback": "./node_modules/.bin/knex migrate:rollback",
     "start": "ts-node-dev --poll src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

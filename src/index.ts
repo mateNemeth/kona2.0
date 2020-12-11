@@ -1,5 +1,8 @@
 import { ASEntryScraper } from './autoscout/autoscout.entryscraper';
+import { ASSpecScraper } from './autoscout/autoscout.specscraper';
 
-const ASScraper = new ASEntryScraper();
+const ScoutEntryScraper = new ASEntryScraper();
+const ScoutSpecScraper = new ASSpecScraper();
 
-ASScraper.runScraper();
+ScoutEntryScraper.runScraper();
+// ScoutSpecScraper.runScraper();

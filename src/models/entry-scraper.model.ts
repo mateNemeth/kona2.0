@@ -1,26 +1,30 @@
-import * as Knex from 'knex';
 import Axios from 'axios';
-import database from '../db/database';
-import { IVehicleEntry } from '../interfaces/IVehicleEntry';
+import { IVehicleEntry } from '../interfaces/interfaces';
 import { Utils } from '../utils/utils';
+import { Database } from '../database/database';
+import { Logger } from '../logger/logger';
 
 export abstract class EntryScraper {
-  protected dbService: Knex;
+  abstract processData(data: string): Promise<Omit<IVehicleEntry, 'id'>[]>;
+  abstract serviceName: string;
   abstract platformUrl: string;
   abstract queryUrl: string;
   abstract sleepTime: number;
+  private duplicates = 0;
+  private count = 0;
 
-  abstract processData(data: string): IVehicleEntry[];
 
-  constructor() {
-    this.initDbConnection();
-  }
+  constructor(private dbService = Database.getInstance()) {}
 
-  protected async runScraper() {
+  async runScraper() {
     try {
+      Logger.log(this.serviceName, 'info', 'Looking for new entries...')
       const data = await this.scrapeUrl();
-      const processed = this.processData(data);
+      const processed = await this.processData(data);
       await this.saveData(processed);
+      Logger.log(this.serviceName, 'info', `Processed ${this.count} new entrie(s).`)
+      this.tweakSpeed();
+      Logger.log(this.serviceName, 'info', `Sleeping for ${this.sleepTime} minutes.`);
       await Utils.sleep(this.sleepTime * 60 * 1000);
       this.runScraper();
     } catch (err) {
@@ -35,28 +39,30 @@ export abstract class EntryScraper {
     return response.data;
   }
 
-  protected async saveData(data: IVehicleEntry[]) {
-    data.forEach(async (item) => {
-      const rows = await this.dbService('carlist').where(
-        'platform_id',
-        item.platformId
-      );
-      if (rows.length === 0) {
-        this.speedUp();
-        return this.dbService('carlist').insert({
+  protected async saveData(data: Omit<IVehicleEntry, 'id'>[]) {
+    this.duplicates = 0;
+    this.count = 0;
+    for (const item of data) {
+      const rows = await this.dbService
+        .knex('carlist')
+        .where('platform_id', item.platformId);
+
+      if (rows.length >= 1) {
+        this.duplicates++;
+      } else {
+        this.count++;
+        await this.dbService.knex('carlist').insert({
           platform: item.platform,
           platform_id: item.platformId,
-          link: item.link,
-          crawled: false,
+          url: item.url,
         });
-      } else {
-        this.slowDown();
       }
-    });
+    }
   }
 
-  protected async initDbConnection() {
-    this.dbService = await database.create();
+  private tweakSpeed() {
+    if (this.duplicates >= 5) this.slowDown();
+    else this.speedUp();
   }
 
   protected speedUp() {
