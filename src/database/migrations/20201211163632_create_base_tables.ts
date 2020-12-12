@@ -2,7 +2,7 @@ import * as Knex from "knex";
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('carlist', (table) => {
-    table.increments('id').primary();
+    table.bigIncrements('id').primary();
     table.text('platform').notNullable();
     table.text('platform_id').notNullable().unique();
     table.text('url').notNullable();
@@ -11,15 +11,15 @@ export async function up(knex: Knex): Promise<void> {
   });
 
   await knex.schema.createTable('cartype', (table) => {
-    table.increments('id').primary().notNullable();
+    table.bigIncrements('id').primary().notNullable();
     table.text('make').notNullable();
     table.text('model').notNullable();
     table.integer('age').notNullable();
   });
 
   await knex.schema.createTable('carspec', (table) => {
-    table.increments('id').unsigned().index().references('id').inTable('carlist');
-    table.integer('cartype').unsigned().index().references('id').inTable('cartype');
+    table.bigIncrements('id').unsigned().index().references('id').inTable('carlist');
+    table.bigInteger('cartype').unsigned().index().references('id').inTable('cartype');
     table.integer('price').notNullable();
     table.integer('ccm');
     table.text('fuel');
@@ -31,13 +31,13 @@ export async function up(knex: Knex): Promise<void> {
   });
 
   await knex.schema.createTable('average_prices', (table) => {
-    table.integer('id').unsigned().index().references('id').inTable('cartype');
+    table.bigInteger('id').unsigned().index().references('id').inTable('cartype');
     table.integer('avg').notNullable();
     table.integer('median').notNullable();
   });
 
   await knex.schema.createTable('working_queue', (table) => {
-    table.integer('id').unsigned().index().references('id').inTable('carlist');
+    table.bigInteger('id').unsigned().index().references('id').inTable('carlist');
     table.boolean('working').defaultTo(false);
   });
 }

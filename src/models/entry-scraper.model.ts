@@ -55,12 +55,12 @@ export abstract class EntryScraper {
     };
 
     Logger.log(this.serviceName, 'info', `Saved ${this.count} entries into DB.`)
-    this.count = 0;
   }
-
+  
   private tweakSpeed() {
     if (this.count <= 15) this.slowDown();
     else this.speedUp();
+    this.count = 0;
     Logger.log(this.serviceName, 'info', `Sleeping for ${this.sleepTime} minutes.`);
   }
 
