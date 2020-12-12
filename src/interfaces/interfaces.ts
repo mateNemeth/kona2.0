@@ -2,7 +2,7 @@ export interface IVehicleEntry {
   id: number;
   platform: string;
   platformId: string;
-  url: string;
+  link: string;
 };
 
 export interface IVehicleSpec {

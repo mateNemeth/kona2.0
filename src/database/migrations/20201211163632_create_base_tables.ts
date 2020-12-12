@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
     table.bigIncrements('id').primary();
     table.text('platform').notNullable();
     table.text('platform_id').notNullable().unique();
-    table.text('url').notNullable();
+    table.text('link').notNullable();
     table.dateTime('date_of_scan').defaultTo(knex.raw('now()'));
     table.boolean('crawled').defaultTo(false);
   });

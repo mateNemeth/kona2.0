@@ -14,14 +14,14 @@ export class ASEntryScraper extends EntryScraper {
     $('.cldt-summary-full-item').each((i, element) => {
       const entryId = $(element).attr('id')!.split('-');
       const platformId = entryId.slice(1, entryId.length).join('-');
-      const url = `/ajanlat/${
+      const link = `/ajanlat/${
         $(element).find($('a')).attr('href')!.split('/')[2]
       }`;
 
       const vehicle = {
         platform: this.platformUrl,
         platformId,
-        url,
+        link,
       };
 
       response.unshift(vehicle);

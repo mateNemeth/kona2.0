@@ -49,7 +49,7 @@ export abstract class EntryScraper {
         await this.dbService.knex('carlist').insert({
           platform: item.platform,
           platform_id: item.platformId,
-          url: item.url,
+          link: item.link,
         });
       }
     };

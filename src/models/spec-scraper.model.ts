@@ -55,10 +55,10 @@ export abstract class SpecScraper {
 
   private async scrapeEntry(entry: IVehicleEntry) {
     Logger.log(this.serviceName, 'info', `Found new entry: ${JSON.stringify(entry)}.`);
-    Logger.log(this.serviceName, 'info', `Scraping url: ${entry.platform}${entry.url}.`);
+    Logger.log(this.serviceName, 'info', `Scraping url: ${entry.platform}${entry.link}.`);
     let raw: AxiosResponse<string> | undefined;
     try {
-      raw = await Axios.get(`${entry.platform}${entry.url}`);
+      raw = await Axios.get(`${entry.platform}${entry.link}`);
     } catch (e) {
       if (e.response.status === 410 || e.response.status === 404) {
         await this.removeEntry(entry.id);
