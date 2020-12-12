@@ -159,19 +159,15 @@ export abstract class SpecScraper {
     }
   }
 
-  private speedUp() {
-    if (this.sleepTime > 0.20) {
-      this.sleepTime -= 0.1;
-    }
+  private formatPrice(price: number): string {
+    return new Intl.NumberFormat('hu-HU', {style: 'currency', currency: 'EUR'}).format(price);
   }
 
   private slowDown() {
-    if (this.sleepTime < 15) {
-      this.sleepTime += 0.1;
-    }
+    this.sleepTime = Utils.slowDown(this.sleepTime, 15);
   }
 
-  private formatPrice(price: number): string {
-    return new Intl.NumberFormat('hu-HU', {style: 'currency', currency: 'EUR'}).format(price);
+  private speedUp() {
+    this.sleepTime = Utils.speedUp(this.sleepTime, 0.2);
   }
 }

@@ -17,4 +17,14 @@ export namespace Utils {
       ? Math.round((sorted[middle + 1] + sorted[middle]) / 2)
       : Math.round(sorted[middle])
   }
+
+  export function speedUp(currentTime: number, maxTime: number) {
+    if (currentTime > maxTime) return Math.round((currentTime - 0.1) * 10) / 10;
+    return maxTime;
+  }
+
+  export function slowDown(currentTime: number, minTime: number) {
+    if (currentTime < minTime) return Math.round((currentTime + 0.1) * 10) / 10;
+    return minTime;
+  }
 }

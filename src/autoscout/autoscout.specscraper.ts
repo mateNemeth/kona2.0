@@ -5,7 +5,7 @@ import { IVehicleSpec, IVehicleType } from '../interfaces/interfaces';
 export class ASSpecScraper extends SpecScraper {
   serviceName = 'AS SpecScraper';
   platform = 'https://www.autoscout24.hu';
-  sleepTime = 2.5;
+  sleepTime = 0.2;
 
   async processData(data: string, id: number): Promise<{vehicleSpec: IVehicleSpec, vehicleType: IVehicleType}> {
     const numberPattern = /\d+/g;

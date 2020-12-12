@@ -58,23 +58,9 @@ export abstract class EntryScraper {
   }
   
   private tweakSpeed() {
-    if (this.count <= 15) this.slowDown();
-    else this.speedUp();
+    if (this.count <= 15) this.sleepTime = Utils.slowDown(this.sleepTime, 15);
+    else this.sleepTime = Utils.speedUp(this.sleepTime, 0.5);
     this.count = 0;
     Logger.log(this.serviceName, 'info', `Sleeping for ${this.sleepTime} minutes.`);
-  }
-
-  private speedUp() {
-    if (this.sleepTime >= 0.5) {
-      this.sleepTime = Math.round((this.sleepTime - 0.1) * 10) / 10;
-      Logger.log(this.serviceName, 'info', `Speeding up crawler.`);
-    }
-  }
-
-  private slowDown() {
-    if (this.sleepTime < 15) {
-      this.sleepTime = Math.round((this.sleepTime + 0.1) * 10) / 10;
-      Logger.log(this.serviceName, 'info', `Slowing down crawler.`);
-    }
   }
 }
