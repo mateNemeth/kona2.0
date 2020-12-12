@@ -1,4 +1,5 @@
 import * as Knex from 'knex';
+import knex from 'knex';
 const config = require('../../knexfile');
 
 export class Database {
@@ -6,7 +7,7 @@ export class Database {
   knex: Knex;
 
   private constructor() {
-    this.knex = Knex({
+    this.knex = knex({
       ...config,
       pool: {
         min: 0,

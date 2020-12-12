@@ -6,20 +6,23 @@
   "scripts": {
     "migrate:latest": "./node_modules/.bin/knex migrate:latest",
     "migrate:rollback": "./node_modules/.bin/knex migrate:rollback",
-    "start": "ts-node-dev --poll src/index.ts",
+    "start:dev": "ts-node-dev --poll src/index.ts",
+    "start:production": "rm -rf /dist && tsc && node ./dist/src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "mateNemeth",
   "license": "ISC",
-  "dependencies": {
-    "@types/cheerio": "^0.22.22",
-    "@types/knex": "^0.16.1",
+  "dependencies": {    
     "axios": "^0.21.0",
     "cheerio": "^1.0.0-rc.3",
     "dotenv": "^8.2.0",
     "knex": "^0.21.12",
     "pg": "^8.5.1",
-    "ts-node-dev": "^1.0.0",
     "typescript": "^4.0.5"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.22",
+    "@types/knex": "^0.16.1",
+    "ts-node-dev": "^1.0.0"
   }
 }

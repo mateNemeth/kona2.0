@@ -15,50 +15,38 @@ export abstract class SpecScraper {
     private dbService = Database.getInstance()
   ) {}
 
-  async runScraper() {
+  async runScraper(): Promise<any> {
     try {
-      Logger.log(this.serviceName, 'info', 'Finding entries to scrape...')
       const entry = await this.findEntryToScrape();
       if (!entry) {
         this.slowDown();
-        Logger.log(this.serviceName, 'info', `No new entry found, sleeping for ${this.sleepTime} minutes.`);
+        Logger.log(this.serviceName, 'info', `No entry found to scrape, sleeping for ${this.sleepTime} minutes.`);
         await Utils.sleep(this.sleepTime * 60 * 1000);
         return this.runScraper();
       };
 
-      Logger.log(this.serviceName, 'info', 'Entry found! Crawling...');
       const raw = await this.scrapeEntry(entry);
-      if (!raw) {
-        this.slowDown();
-        await Logger.log(this.serviceName, 'warn', `Something went wrong, retry in ${this.sleepTime} minutes.`)
-        return this.runScraper();
-      };
-
       const processed = await this.processData(raw.data, entry.id);
-      if (!processed) {
-        this.slowDown();
-        Logger.log(this.serviceName, 'warn', `Something went wrong, retry in ${this.sleepTime} minutes.`);
-        return this.runScraper();
-      };
-
-      Logger.log(this.serviceName, 'info', 'Processing data...');
       const typeId = await this.getTypeId(processed.vehicleType);
+
       await this.saveProcessed(processed.vehicleSpec, typeId);
       await this.updateAvgMedianPrices(typeId);
       await this.updateQueue(processed.vehicleSpec);
       this.speedUp();
+
       Logger.log(this.serviceName, 'info', `Processing done, sleeping for ${this.sleepTime} minutes.`);
       await Utils.sleep(this.sleepTime * 60 * 1000);
       this.maxErrorCount = 0;
       return this.runScraper();
+
     } catch (e) {
-      Logger.log('speclofasz', 'error', e.stack);
+      Logger.log(this.serviceName, 'error', e.stack);
       this.maxErrorCount++;
       if (this.maxErrorCount <= 3) {
         await Utils.sleep(20000);
         return this.runScraper;
       } else {
-        Logger.log('speclofasz', 'error', `Error count reached the limit of ${this.maxErrorCount}, sleeping for 10 minutes before retry.`)
+        Logger.log(this.serviceName, 'error', `Error count reached the limit of ${this.maxErrorCount}, sleeping for 10 minutes before retry.`)
         await Utils.sleep(600000);
         return this.runScraper;
       }
@@ -66,18 +54,27 @@ export abstract class SpecScraper {
   }
 
   private async scrapeEntry(entry: IVehicleEntry) {
-    let raw: AxiosResponse<string>;
+    Logger.log(this.serviceName, 'info', `Found new entry: ${JSON.stringify(entry)}.`);
+    Logger.log(this.serviceName, 'info', `Scraping url: ${entry.platform}${entry.url}.`);
+    let raw: AxiosResponse<string> | undefined;
     try {
       raw = await Axios.get(`${entry.platform}${entry.url}`);
     } catch (e) {
       if (e.response.status === 410 || e.response.status === 404) {
         await this.removeEntry(entry.id);
+        Logger.log(this.serviceName, 'warn', `Entry doesn't exist anymore.`)
+        return this.runScraper();
       }
+
+      this.slowDown();
+      Logger.log(this.serviceName, 'warn', `Something went wrong, retry in ${this.sleepTime} minutes.`)
+      return this.runScraper();
     }
     return raw;
   }
 
   private async findEntryToScrape() {
+    Logger.log(this.serviceName, 'info', 'Querying un-crawled entries.');
     return await this.dbService
       .knex('carlist')
       .where('crawled', false)
@@ -95,15 +92,21 @@ export abstract class SpecScraper {
       .select('id')
       .first()
       .where({ make: entry.make, model: entry.model, age: entry.age }))?.id;
-    if (!id)
+      if (!id) {
+      Logger.log(this.serviceName, 'info', `Saving type into db: ${JSON.stringify({make: entry.make, model: entry.model, age: entry.age})}`);
       [id] = await this.dbService
         .knex('cartype')
         .insert({ make: entry.make, model: entry.model, age: entry.age })
         .returning('id');
+    } else {
+      // @ts-ignore
+      Logger.log(this.serviceName, 'info', `Type already exist, returning it: ${JSON.stringify({id, ...entry})}`)
+    }
     return id;
   }
 
   private async saveProcessed(entry: IVehicleSpec, typeId: number) {
+    Logger.log(this.serviceName, 'info', `Saving spec into db: ${JSON.stringify({...entry, cartype: typeId})}`)
     await this.dbService.knex('carspec').insert({ ...entry, cartype: typeId });
     await this.dbService
       .knex('carlist')
@@ -113,14 +116,18 @@ export abstract class SpecScraper {
   }
 
   private async updateQueue(entry: IVehicleSpec) {
+    Logger.log(this.serviceName, 'info', `Saving ${entry.id} into working queue table.`);
     return await this.dbService.knex('working_queue').insert({ id: entry.id });
   }
 
   private async updateAvgMedianPrices(typeId: number) {
+    Logger.log(this.serviceName, 'info', `Updating average prices for carype: ${typeId}`);
     const prices = await this.getAllPricesForType(typeId);
     if (!prices) return;
     const avg = Utils.calculateAverage(prices);
+    Logger.log(this.serviceName, 'info', `New average for ${typeId}: ${this.formatPrice(avg)}`);
     const median = Utils.calculateMedian(prices);
+    Logger.log(this.serviceName, 'info', `New median for  ${typeId}: ${this.formatPrice(median)}`);
     return await this.dbService
       .knex('average_prices')
       .insert({ id: typeId, avg, median })
@@ -128,7 +135,7 @@ export abstract class SpecScraper {
       .merge();
   }
 
-  private async getAllPricesForType(typeId: number): Promise<number[]> {
+  private async getAllPricesForType(typeId: number): Promise<number[]| undefined> {
     const type = await this.dbService
       .knex('cartype')
       .where('id', typeId)
@@ -162,5 +169,9 @@ export abstract class SpecScraper {
     if (this.sleepTime < 15) {
       this.sleepTime += 0.1;
     }
+  }
+
+  private formatPrice(price: number): string {
+    return new Intl.NumberFormat('hu-HU', {style: 'currency', currency: 'EUR'}).format(price);
   }
 }

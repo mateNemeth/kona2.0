@@ -7,14 +7,14 @@ export class ASSpecScraper extends SpecScraper {
   platform = 'https://www.autoscout24.hu';
   sleepTime = 2.5;
 
-  async processData(data: string, id: number) {
+  async processData(data: string, id: number): Promise<{vehicleSpec: IVehicleSpec, vehicleType: IVehicleType}> {
     const numberPattern = /\d+/g;
     const $ = cheerio.load(data);
     const lookFor = (
       element: cheerio.Cheerio,
       keyword: string
     ): cheerio.Cheerio => {
-      return $(element).filter(function () {
+      return $(element).filter( () => {
         return $(this).text().trim() === keyword;
       });
     };
@@ -25,10 +25,10 @@ export class ASSpecScraper extends SpecScraper {
       $('.sc-font-l.cldt-stage-primary-keyfact')
         .eq(4)
         .text()
-        .match(numberPattern)[1] ?? 0
+        .match(numberPattern)![1] ?? 0
     );
 
-    if (!age || !model || !make) return;
+    if (!age || !model || !make) throw new Error();
 
     const km = () => {
       const result = $('.sc-font-l.cldt-stage-primary-keyfact')
@@ -76,7 +76,7 @@ export class ASSpecScraper extends SpecScraper {
           return lookFor($('dt'), 'Üzemanyag').next().text().trim();
         }
       } else {
-        return null;
+        return;
       }
     };
 
@@ -91,7 +91,7 @@ export class ASSpecScraper extends SpecScraper {
           return lookFor($('dt'), 'Váltó típusa').next().text().trim();
         }
       } else {
-        return null;
+        return;
       }
     };
 
@@ -101,16 +101,16 @@ export class ASSpecScraper extends SpecScraper {
           lookFor($('dt'), 'Hengerűrtartalom')
             .next()
             .text()
-            .match(numberPattern)
+            .match(numberPattern)!
             .join('')
         );
       } else {
-        return null;
+        return;
       }
     };
 
     const price = Number(
-      $('.cldt-price').eq(1).find('h2').text().match(numberPattern).join('')
+      $('.cldt-price').eq(1).find('h2').text().match(numberPattern)?.join('')
     );
 
     const city = $('.cldt-stage-vendor-text.sc-font-s')
