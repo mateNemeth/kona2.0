@@ -14,8 +14,8 @@ export class ASSpecScraper extends SpecScraper {
       element: cheerio.Cheerio,
       keyword: string
     ): cheerio.Cheerio => {
-      return $(element).filter( () => {
-        return $(this).text().trim() === keyword;
+      return $(element).filter( function (i, el) {
+        return $(el).text().trim() === keyword;
       });
     };
 

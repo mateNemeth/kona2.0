@@ -18,13 +18,14 @@ export namespace Utils {
       : Math.round(sorted[middle])
   }
 
-  export function speedUp(currentTime: number, maxTime: number) {
-    if (currentTime > maxTime) return Math.round((currentTime - 0.1) * 10) / 10;
-    return maxTime;
+  export function speedUp(currentTime: number, minTime: number, amount: number = 0.1) {
+    const newTime = Math.round((currentTime - amount) * 10) / 10;
+    if (newTime < minTime) return minTime;
+    return newTime;
   }
 
-  export function slowDown(currentTime: number, minTime: number) {
-    if (currentTime < minTime) return Math.round((currentTime + 0.1) * 10) / 10;
-    return minTime;
+  export function slowDown(currentTime: number, maxTime: number, amount: number = 0.1) {
+    if (currentTime < maxTime) return Math.round((currentTime + amount) * 10) / 10;
+    return maxTime;
   }
 }

@@ -25,6 +25,8 @@ export abstract class EntryScraper {
       this.runScraper();
     } catch (err) {
       console.error(err);
+      await Utils.sleep(3 * 60 * 1000);
+      this.runScraper();
     }
   }
 

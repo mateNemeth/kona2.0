@@ -60,7 +60,7 @@ export abstract class SpecScraper {
     try {
       raw = await Axios.get(`${entry.platform}${entry.link}`);
     } catch (e) {
-      if (e.response.status === 410 || e.response.status === 404) {
+      if (e.response?.status === 410 || e.response?.status === 404) {
         await this.removeEntry(entry.id);
         Logger.log(this.serviceName, 'warn', `Entry doesn't exist anymore.`)
         return this.runScraper();
@@ -68,6 +68,8 @@ export abstract class SpecScraper {
 
       this.slowDown();
       Logger.log(this.serviceName, 'warn', `Something went wrong, retry in ${this.sleepTime} minutes.`)
+      Logger.log(this.serviceName, 'error', JSON.stringify(e))
+      await Utils.sleep(this.sleepTime * 60 * 1000);
       return this.runScraper();
     }
     return raw;
@@ -87,22 +89,20 @@ export abstract class SpecScraper {
   }
 
   private async getTypeId(entry: IVehicleType): Promise<number> {
-    let id = (await this.dbService
+    let type = (await this.dbService
       .knex('cartype')
-      .select('id')
       .first()
-      .where({ make: entry.make, model: entry.model, age: entry.age }))?.id;
-      if (!id) {
+      .where({ make: entry.make, model: entry.model, age: entry.age }));
+      if (!type) {
       Logger.log(this.serviceName, 'info', `Saving type into db: ${JSON.stringify({make: entry.make, model: entry.model, age: entry.age})}`);
-      [id] = await this.dbService
+      type = await this.dbService
         .knex('cartype')
-        .insert({ make: entry.make, model: entry.model, age: entry.age })
-        .returning('id');
+        .insert({ make: entry.make, model: entry.model, age: entry.age });
     } else {
       // @ts-ignore
-      Logger.log(this.serviceName, 'info', `Type already exist, returning it: ${JSON.stringify({id, ...entry})}`)
+      Logger.log(this.serviceName, 'info', `Type already exist, returning it: ${JSON.stringify(type)}`)
     }
-    return id;
+    return type.id;
   }
 
   private async saveProcessed(entry: IVehicleSpec, typeId: number) {
@@ -164,10 +164,10 @@ export abstract class SpecScraper {
   }
 
   private slowDown() {
-    this.sleepTime = Utils.slowDown(this.sleepTime, 15);
+    this.sleepTime = Utils.slowDown(this.sleepTime, 2.5);
   }
 
   private speedUp() {
-    this.sleepTime = Utils.speedUp(this.sleepTime, 0.2);
+    this.sleepTime = Utils.speedUp(this.sleepTime, 0.2, 0.25);
   }
 }
