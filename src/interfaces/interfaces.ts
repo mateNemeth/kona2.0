@@ -23,3 +23,5 @@ export interface IVehicleType {
   model: string;
   age: number;
 }
+
+export type IVehicleTypePreview = Omit<IVehicleType, 'id'>;

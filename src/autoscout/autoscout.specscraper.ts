@@ -1,13 +1,13 @@
 import * as cheerio from 'cheerio';
 import { SpecScraper } from '../models/spec-scraper.model';
-import { IVehicleSpec, IVehicleType } from '../interfaces/interfaces';
+import { IVehicleSpec, IVehicleTypePreview } from '../interfaces/interfaces';
 
 export class ASSpecScraper extends SpecScraper {
   serviceName = 'AS SpecScraper';
   platform = 'https://www.autoscout24.hu';
   sleepTime = 0.2;
 
-  async processData(data: string, id: number): Promise<{vehicleSpec: IVehicleSpec, vehicleType: IVehicleType}> {
+  async processData(data: string, id: number): Promise<{vehicleSpec: IVehicleSpec, vehicleType: IVehicleTypePreview}> {
     const numberPattern = /\d+/g;
     const $ = cheerio.load(data);
     const lookFor = (
@@ -28,7 +28,10 @@ export class ASSpecScraper extends SpecScraper {
         .match(numberPattern)![1] ?? 0
     );
 
-    if (!age || !model || !make) throw new Error();
+    if (!age || !model || !make) {
+      await this.removeEntry(id);
+      return this.runScraper();
+    }
 
     const km = () => {
       const result = $('.sc-font-l.cldt-stage-primary-keyfact')
@@ -135,7 +138,6 @@ export class ASSpecScraper extends SpecScraper {
         zipcode,
       },
       vehicleType: {
-        id,
         make,
         model,
         age,

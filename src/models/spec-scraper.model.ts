@@ -1,11 +1,11 @@
 import Axios, { AxiosResponse } from 'axios';
 import { Database } from '../database/database';
-import { IVehicleEntry, IVehicleSpec, IVehicleType } from '../interfaces/interfaces';
+import { IVehicleEntry, IVehicleSpec, IVehicleType, IVehicleTypePreview } from '../interfaces/interfaces';
 import { Logger } from '../logger/logger';
 import { Utils } from '../utils/utils';
 
 export abstract class SpecScraper {
-  abstract processData(data: string, id: number): Promise<{vehicleSpec: IVehicleSpec, vehicleType: IVehicleType}>;
+  abstract processData(data: string, id: number): Promise<{vehicleSpec: IVehicleSpec, vehicleType: IVehicleTypePreview}>;
   abstract serviceName: string;
   abstract sleepTime: number;
   abstract platform: string;
@@ -81,23 +81,24 @@ export abstract class SpecScraper {
       .knex('carlist')
       .where('crawled', false)
       .andWhere('platform', this.platform)
+      .orderBy('id')
       .first();
   }
 
-  private async removeEntry(id: number) {
-    return this.dbService.knex('carlist').where('id', id).del();
+  protected async removeEntry(id: number) {
+    return this.dbService.knex('carlist').where('id', id).update('crawled', true);
   }
 
-  private async getTypeId(entry: IVehicleType): Promise<number> {
+  private async getTypeId(entry: IVehicleTypePreview): Promise<number> {
     let type = (await this.dbService
       .knex('cartype')
       .first()
       .where({ make: entry.make, model: entry.model, age: entry.age }));
       if (!type) {
       Logger.log(this.serviceName, 'info', `Saving type into db: ${JSON.stringify({make: entry.make, model: entry.model, age: entry.age})}`);
-      type = await this.dbService
+      type = (await this.dbService
         .knex('cartype')
-        .insert({ make: entry.make, model: entry.model, age: entry.age });
+        .insert({ make: entry.make, model: entry.model, age: entry.age }).returning(('*')))[0];
     } else {
       // @ts-ignore
       Logger.log(this.serviceName, 'info', `Type already exist, returning it: ${JSON.stringify(type)}`)
