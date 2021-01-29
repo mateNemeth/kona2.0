@@ -9,7 +9,8 @@ export abstract class SpecScraper {
   abstract serviceName: string;
   abstract sleepTime: number;
   abstract platform: string;
-  private maxErrorCount = 0;
+  abstract maxErrorCount: number;
+  private errorCount = 0;
 
   constructor(
     private dbService = Database.getInstance()
@@ -36,19 +37,23 @@ export abstract class SpecScraper {
 
       Logger.log(this.serviceName, 'info', `Processing done, sleeping for ${this.sleepTime} minutes.`);
       await Utils.sleep(this.sleepTime * 60 * 1000);
-      this.maxErrorCount = 0;
       return this.runScraper();
 
     } catch (e) {
       Logger.log(this.serviceName, 'error', e.stack);
-      this.maxErrorCount++;
-      if (this.maxErrorCount <= 3) {
+      this.errorCount++;
+      if (this.errorCount < this.maxErrorCount) {
         await Utils.sleep(20000);
-        return this.runScraper;
+        return this.runScraper();
       } else {
-        Logger.log(this.serviceName, 'error', `Error count reached the limit of ${this.maxErrorCount}, sleeping for 10 minutes before retry.`)
-        await Utils.sleep(600000);
-        return this.runScraper;
+        const faultyEntry = await this.findEntryToScrape();
+        if (faultyEntry) {
+          Logger.log(this.serviceName, 'error', `Error count reached the limit of ${this.maxErrorCount}, removing entry ${JSON.stringify(faultyEntry)} and sleeping for 5 minutes before retry.`);
+          await this.removeEntry(faultyEntry.id);
+        }
+        this.resetErrorCount();
+        await Utils.sleep(300000);
+        return this.runScraper();
       }
     }
   }
@@ -78,7 +83,7 @@ export abstract class SpecScraper {
   private async findEntryToScrape() {
     Logger.log(this.serviceName, 'info', 'Querying un-crawled entries.');
     return await this.dbService
-      .knex('carlist')
+      .knex<IVehicleEntry>('carlist')
       .where('crawled', false)
       .andWhere('platform', this.platform)
       .orderBy('id')
@@ -100,7 +105,6 @@ export abstract class SpecScraper {
         .knex('cartype')
         .insert({ make: entry.make, model: entry.model, age: entry.age }).returning(('*')))[0];
     } else {
-      // @ts-ignore
       Logger.log(this.serviceName, 'info', `Type already exist, returning it: ${JSON.stringify(type)}`)
     }
     return type.id;
@@ -170,5 +174,9 @@ export abstract class SpecScraper {
 
   private speedUp() {
     this.sleepTime = Utils.speedUp(this.sleepTime, 0.2, 0.25);
+  }
+
+  private resetErrorCount() {
+    this.errorCount = 0;
   }
 }

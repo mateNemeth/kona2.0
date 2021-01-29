@@ -6,6 +6,7 @@ export class ASSpecScraper extends SpecScraper {
   serviceName = 'AS SpecScraper';
   platform = 'https://www.autoscout24.hu';
   sleepTime = 0.2;
+  maxErrorCount = 5;
 
   async processData(data: string, id: number): Promise<{vehicleSpec: IVehicleSpec, vehicleType: IVehicleTypePreview}> {
     const numberPattern = /\d+/g;
