@@ -48,11 +48,11 @@ export abstract class SpecScraper {
       } else {
         const faultyEntry = await this.findEntryToScrape();
         if (faultyEntry) {
-          Logger.log(this.serviceName, 'error', `Error count reached the limit of ${this.maxErrorCount}, removing entry ${JSON.stringify(faultyEntry)} and sleeping for 5 minutes before retry.`);
+          Logger.log(this.serviceName, 'error', `Error count reached the limit of ${this.maxErrorCount}, removing entry ${JSON.stringify(faultyEntry)} and sleeping for ${this.sleepTime} minutes before retry.`);
           await this.removeEntry(faultyEntry.id);
         }
         this.resetErrorCount();
-        await Utils.sleep(300000);
+        await Utils.sleep(this.sleepTime);
         return this.runScraper();
       }
     }
