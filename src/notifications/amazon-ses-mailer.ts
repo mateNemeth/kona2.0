@@ -9,8 +9,6 @@ import { Notifier } from './notification-manager';
 import * as AWS from 'aws-sdk';
 import { awsConfig } from '../configs/aws';
 
-AWS.config.update(awsConfig);
-
 export class AmazonSESMailer implements Notifier {
   serviceName = 'AmazonSESMailer';
   private awsSesService: AWS.SES;
