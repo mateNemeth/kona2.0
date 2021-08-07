@@ -33,7 +33,7 @@ export class AmazonSESMailer implements Notifier {
           .select()
           .where('id', data.id)
           .first()
-          .then((row) => `${row.platform}${row.linkg}`);
+          .then((row) => `${row.platform}${row.link}`);
         const typeText = `${data.make} ${data.model} - (${data.age}, ${data.fuel})`;
         userEmailsToAlert.forEach(u => {
           this.mailIt(typeText, data.price ?? 0, link, avg ?? 0, median ?? 0, u)
@@ -193,7 +193,7 @@ export class AmazonSESMailer implements Notifier {
     const params: AWS.SES.SendEmailRequest = {
       Destination: {
         ToAddresses: [userEmail],
-        BccAddresses: [process.env.BCC_EMAIL ?? ''],
+        BccAddresses: process.env.BCC_EMAIL ? [process.env.BCC_EMAIL] : undefined,
       },
       Message: {
         /* required */
@@ -483,7 +483,7 @@ export class AmazonSESMailer implements Notifier {
         },
       },
       Source: process.env.FROM_EMAIL,
-      ReplyToAddresses: [process.env.REPLY_EMAIL ?? ''],
+      ReplyToAddresses: process.env.REPLY_EMAIL ? [process.env.REPLY_EMAIL] : undefined,
     };
 
     const sendPromise = this.awsSesService.sendEmail(params).promise();
