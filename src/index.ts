@@ -7,7 +7,7 @@ import { NotificationManager } from './notifications/notification-manager';
 const ScoutEntryScraper = new ASEntryScraper();
 const ScoutSpecScraper = new ASSpecScraper();
 const Mailer = new AmazonSESMailer();
-const Notifications = new NotificationManager(Database.getInstance(), [Mailer]);
+const Notifications = new NotificationManager([Mailer]);
 
 ScoutEntryScraper.runScraper();
 ScoutSpecScraper.runScraper();

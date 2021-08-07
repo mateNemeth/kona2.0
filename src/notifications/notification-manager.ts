@@ -12,26 +12,27 @@ export class NotificationManager {
   sleepTime = 2;
 
   constructor(
+    private notifiers: Notifier[],
     private dbService = Database.getInstance(),
-    private notifiers: Notifier[]
   ) {}
 
   async processNotifications() {
     try {
       const carSpec = await this.findWork();
       if (!carSpec) {
-        this.sleepTime = 2 * 60 * 1000;
+        this.sleepTime = 2 ;
         Logger.log(
           this.serviceName,
           'info',
-          `No work found, sleeping for 2 mins.`
+          `No work found, sleeping for ${this.sleepTime} mins.`
         );
       } else {
         this.removeFromQueue(carSpec.id);
         this.notifiers.forEach((n) => n.sendNotification(carSpec));
+        this.sleepTime = 0.16;
       }
 
-      await Utils.sleep(this.sleepTime);
+      await Utils.sleep(this.sleepTime * 60 * 1000);
       this.processNotifications();
     } catch (e) {
       Logger.log(this.serviceName, 'error', JSON.stringify(e));
