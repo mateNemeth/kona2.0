@@ -13,9 +13,7 @@ export namespace Utils {
     const sorted = numArr.slice().sort((a, b) => a - b);
     const middle = Math.floor(sorted.length / 2);
 
-    return sorted.length % 2 === 0
-      ? Math.round((sorted[middle + 1] + sorted[middle]) / 2)
-      : Math.round(sorted[middle])
+    return Math.round((sorted[middle + 1] + sorted[middle]) / 2);
   }
 
   export function speedUp(currentTime: number, minTime: number, amount: number = 0.1) {

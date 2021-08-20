@@ -142,17 +142,16 @@ export class AmazonSESMailer implements Notifier {
             : false
           : true)
       ) {
-        return alert;
+        return true;
       }
     });
     const toNotify: string[] = await Promise.all(
       result.map(async (item) => {
-        const needToNotify = await this.dbService
+        return await this.dbService
           .knex('users')
           .select('email')
           .whereRaw(`${item.id}=ANY(specific_alert)`)
-          .then((resp) => resp[0]?.email);
-        return needToNotify;
+          .first();
       })
     );
     Logger.log(this.serviceName, 'info', `${toNotify.length} user(s) need to be notified.`)

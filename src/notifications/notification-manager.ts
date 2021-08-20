@@ -63,12 +63,11 @@ export class NotificationManager {
         .knex('working_queue')
         .where('id', work.id)
         .returning('id')
-        .first()
         .update('working', true);
       Logger.log(this.serviceName, 'info', `Updated ${rows[0]} on work table`);
 
-      return this.dbService
-        .knex<IVehicleFullData[]>('carspec')
+      return await this.dbService
+        .knex<IVehicleFullData>('carspec')
         .join('cartype', { 'carspec.cartype': 'cartype.id' })
         .where('carspec.id', rows[0])
         .select(
@@ -85,7 +84,7 @@ export class NotificationManager {
           'model',
           'age'
         )
-        .then((resp) => resp[0]);
+        .first();
     } else {
       return;
     }
