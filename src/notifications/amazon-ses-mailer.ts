@@ -20,7 +20,7 @@ export class AmazonSESMailer implements Notifier {
   async sendNotification(data: IVehicleFullData) {
     try {
       const alertList = await this.getAlertList();
-      const userEmailsToAlert = await this.checkAlerts(data, alertList);      
+      const userEmailsToAlert = await this.checkAlerts(data, alertList);
       if (userEmailsToAlert?.length) {
         const { avg, median } = await this.getAveragePrices(data.cartype);
         Logger.log(
@@ -35,9 +35,16 @@ export class AmazonSESMailer implements Notifier {
           .first()
           .then((row) => `${row.platform}${row.link}`);
         const typeText = `${data.make} ${data.model} - (${data.age}, ${data.fuel})`;
-        userEmailsToAlert.forEach(u => {
-          this.mailIt(typeText, data.price ?? 0, link, avg ?? 0, median ?? 0, u)
-        })
+        userEmailsToAlert.forEach((u) => {
+          this.mailIt(
+            typeText,
+            data.price ?? 0,
+            link,
+            avg ?? 0,
+            median ?? 0,
+            u
+          );
+        });
       }
     } catch (e) {
       Logger.log(this.serviceName, 'error', JSON.stringify(e));
@@ -49,19 +56,17 @@ export class AmazonSESMailer implements Notifier {
       .knex<IVehicleAlertFilters>('specific_alerts')
       .select()
       .then(async (resp) => {
-        const keys = Object.keys(resp[0]);
-        const values = resp.map((row) => {
-          let filters: Partial<IVehicleAlertFilters> = {};
-          for (let i = 0; i < keys.length; i++) {
-            if (row[keys[i] as keyof IVehicleAlertFilters]) {
-              // TODO
-              //@ts-ignore
-              filters[keys[i] as keyof IVehicleAlertFilters] =
-                row[keys[i] as keyof IVehicleAlertFilters];
-            }
-          }
-          return filters;
-        });
+        const values = resp.reduce<Partial<IVehicleAlertFilters>[]>(
+          (acc, row) => {
+            const keys = Object.keys(row) as (keyof IVehicleAlertFilters)[];
+            keys.forEach((key) => {
+              if (row[key] === undefined) delete row[key];
+            });
+            acc.push(row);
+            return acc;
+          },
+          []
+        );
         Logger.log(
           this.serviceName,
           'info',
@@ -154,7 +159,11 @@ export class AmazonSESMailer implements Notifier {
           .first();
       })
     );
-    Logger.log(this.serviceName, 'info', `${toNotify.length} user(s) need to be notified.`)
+    Logger.log(
+      this.serviceName,
+      'info',
+      `${toNotify.length} user(s) need to be notified.`
+    );
     return toNotify;
   }
 
@@ -192,7 +201,9 @@ export class AmazonSESMailer implements Notifier {
     const params: AWS.SES.SendEmailRequest = {
       Destination: {
         ToAddresses: [userEmail],
-        BccAddresses: process.env.BCC_EMAIL ? [process.env.BCC_EMAIL] : undefined,
+        BccAddresses: process.env.BCC_EMAIL
+          ? [process.env.BCC_EMAIL]
+          : undefined,
       },
       Message: {
         /* required */
@@ -482,7 +493,9 @@ export class AmazonSESMailer implements Notifier {
         },
       },
       Source: process.env.FROM_EMAIL,
-      ReplyToAddresses: process.env.REPLY_EMAIL ? [process.env.REPLY_EMAIL] : undefined,
+      ReplyToAddresses: process.env.REPLY_EMAIL
+        ? [process.env.REPLY_EMAIL]
+        : undefined,
     };
 
     const sendPromise = this.awsSesService.sendEmail(params).promise();
