@@ -2,26 +2,50 @@ import * as cheerio from 'cheerio';
 import { SpecScraper } from '../models/spec-scraper.model';
 import { IVehicleSpec, IVehicleTypePreview } from '../interfaces/interfaces';
 
+export enum Keywords {
+  MAKE = 'Márka',
+  MODEL = 'Modell',
+  FUEL = 'Üzemanyag',
+  TRANSMISSION = 'Váltó típusa',
+  CCM = 'Hengerűrtartalom',
+}
+
+const diesel = ['Dízel (Particulate Filter)', 'Dízel'];
+const petrol = [
+  'Benzin',
+  'Benzin (Particulate Filter)',
+  'Super 95 (Particulate Filter)',
+  'Super 95',
+  '91-es normálbenzin',
+  'Super E10 Plus 95-ös',
+  'Super Plus 98-as',
+  'E10-es 91-es normálbenzin',
+  'Super Plus E10 98-as',
+];
+
 export class ASSpecScraper extends SpecScraper {
   serviceName = 'AS SpecScraper';
   platform = 'https://www.autoscout24.hu';
   sleepTime = 0.2;
   maxErrorCount = 5;
 
-  async processData(data: string, id: number): Promise<{vehicleSpec: IVehicleSpec, vehicleType: IVehicleTypePreview}> {
+  async processData(
+    data: string,
+    id: number
+  ): Promise<{ vehicleSpec: IVehicleSpec; vehicleType: IVehicleTypePreview }> {
     const numberPattern = /\d+/g;
     const $ = cheerio.load(data);
     const lookFor = (
       element: cheerio.Cheerio,
       keyword: string
     ): cheerio.Cheerio => {
-      return $(element).filter( function (i, el) {
+      return $(element).filter(function (i, el) {
         return $(el).text().trim() === keyword;
       });
     };
 
-    const make = $("dt:contains('Márka')").next().text().trim();
-    const model = $("dt:contains('Modell')").next().text().trim();
+    const make = $(`dt:contains('${Keywords.MAKE}')`).next().text().trim();
+    const model = $(`dt:contains('${Keywords.MODEL}')`).next().text().trim();
     const age = Number(
       $('.sc-font-l.cldt-stage-primary-keyfact')
         .eq(4)
@@ -54,30 +78,18 @@ export class ASSpecScraper extends SpecScraper {
     };
 
     const fuel = () => {
-      if (lookFor($('dt'), 'Üzemanyag').length > 0) {
-        const fuelType = lookFor($('dt'), 'Üzemanyag')
+      if (lookFor($('dt'), Keywords.FUEL).length > 0) {
+        const fuelType = lookFor($('dt'), Keywords.FUEL)
           .next()
           .text()
           .trim()
           .split('/');
-        const diesel = ['Dízel (Particulate Filter)', 'Dízel'];
-        const petrol = [
-          'Benzin',
-          'Benzin (Particulate Filter)',
-          'Super 95 (Particulate Filter)',
-          'Super 95',
-          '91-es normálbenzin',
-          'Super E10 Plus 95-ös',
-          'Super Plus 98-as',
-          'E10-es 91-es normálbenzin',
-          'Super Plus E10 98-as',
-        ];
         if (fuelType.some((item) => diesel.includes(item.trim()))) {
           return 'Dízel';
         } else if (fuelType.some((item) => petrol.includes(item.trim()))) {
           return 'Benzin';
         } else {
-          return lookFor($('dt'), 'Üzemanyag').next().text().trim();
+          return lookFor($('dt'), Keywords.FUEL).next().text().trim();
         }
       } else {
         return;
@@ -85,14 +97,14 @@ export class ASSpecScraper extends SpecScraper {
     };
 
     const transmission = () => {
-      if (lookFor($('dt'), 'Váltó típusa').length > 0) {
+      if (lookFor($('dt'), Keywords.TRANSMISSION).length > 0) {
         if (
-          lookFor($('dt'), 'Váltó típusa').next().text().trim() ===
+          lookFor($('dt'), Keywords.TRANSMISSION).next().text().trim() ===
           'Sebességváltó'
         ) {
           return 'Manuális';
         } else {
-          return lookFor($('dt'), 'Váltó típusa').next().text().trim();
+          return lookFor($('dt'), Keywords.TRANSMISSION).next().text().trim();
         }
       } else {
         return;
@@ -100,9 +112,9 @@ export class ASSpecScraper extends SpecScraper {
     };
 
     const ccm = () => {
-      if (lookFor($('dt'), 'Hengerűrtartalom').length > 0) {
+      if (lookFor($('dt'), Keywords.TRANSMISSION).length > 0) {
         return Number(
-          lookFor($('dt'), 'Hengerűrtartalom')
+          lookFor($('dt'), Keywords.TRANSMISSION)
             .next()
             .text()
             .match(numberPattern)!
@@ -142,7 +154,7 @@ export class ASSpecScraper extends SpecScraper {
         make,
         model,
         age,
-      }
+      },
     };
   }
 }
