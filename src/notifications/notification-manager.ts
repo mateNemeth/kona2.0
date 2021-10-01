@@ -13,14 +13,14 @@ export class NotificationManager {
 
   constructor(
     private notifiers: Notifier[],
-    private dbService = Database.getInstance(),
+    private dbService = Database.getInstance()
   ) {}
 
   async processNotifications() {
     try {
       const carSpec = await this.findWork();
       if (!carSpec) {
-        this.sleepTime = 2 ;
+        this.sleepTime = 2;
         Logger.log(
           this.serviceName,
           'info',
@@ -59,17 +59,18 @@ export class NotificationManager {
         'info',
         `Found work: ${JSON.stringify(work)}`
       );
-      const rows: number[] = await this.dbService
+      const row: number = await this.dbService
         .knex('working_queue')
         .where('id', work.id)
         .returning('id')
+        .first()
         .update('working', true);
-      Logger.log(this.serviceName, 'info', `Updated ${rows[0]} on work table`);
+      Logger.log(this.serviceName, 'info', `Updated ${row} on work table`);
 
       return await this.dbService
         .knex<IVehicleFullData>('carspec')
         .join('cartype', { 'carspec.cartype': 'cartype.id' })
-        .where('carspec.id', rows[0])
+        .where('carspec.id', row)
         .select(
           'carspec.id',
           'cartype',
