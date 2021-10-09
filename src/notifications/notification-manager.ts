@@ -59,18 +59,16 @@ export class NotificationManager {
         'info',
         `Found work: ${JSON.stringify(work)}`
       );
-      const row: number = await this.dbService
+      await this.dbService
         .knex('working_queue')
         .where('id', work.id)
-        .returning('id')
-        .first()
         .update('working', true);
-      Logger.log(this.serviceName, 'info', `Updated ${row} on work table`);
+      Logger.log(this.serviceName, 'info', `Updated ${work.id} on work table`);
 
       return await this.dbService
         .knex<IVehicleFullData>('carspec')
         .join('cartype', { 'carspec.cartype': 'cartype.id' })
-        .where('carspec.id', row)
+        .where('carspec.id', work.id)
         .select(
           'carspec.id',
           'cartype',
