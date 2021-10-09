@@ -42,7 +42,7 @@ export class AmazonSESMailer implements Notifier {
             link,
             avg ?? 0,
             median ?? 0,
-            u
+            u.email
           );
         });
       }
@@ -150,7 +150,7 @@ export class AmazonSESMailer implements Notifier {
         return true;
       }
     });
-    const toNotify: string[] = await Promise.all(
+    const toNotify: { email: string }[] = await Promise.all(
       result.map(async (item) => {
         return await this.dbService
           .knex('users')
