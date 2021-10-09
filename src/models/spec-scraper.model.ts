@@ -187,7 +187,7 @@ export abstract class SpecScraper {
     Logger.log(
       this.serviceName,
       'info',
-      `Updating average prices for carype: ${typeId}`
+      `Updating average prices for cartype: ${typeId}`
     );
     const prices = await this.getAllPricesForType(typeId);
     if (!prices) return;
@@ -218,21 +218,21 @@ export abstract class SpecScraper {
       .where('id', typeId)
       .first();
     if (!type) return;
-    const olderId = await this.dbService
+    const olderType = await this.dbService
       .knex('cartype')
+      .select('id')
       .where({ make: type.make, model: type.model, age: type.age - 1 })
-      .returning('id')
       .first();
-    const newerId = await this.dbService
+    const newerType = await this.dbService
       .knex('cartype')
+      .select('id')
       .where({ make: type.make, model: type.model, age: type.age + 1 })
-      .returning('id')
       .first();
     const all = await this.dbService
       .knex('carspec')
       .where('cartype', typeId)
-      .orWhere('cartype', olderId ?? null)
-      .orWhere('cartype', newerId ?? null);
+      .orWhere('cartype', olderType.id ?? null)
+      .orWhere('cartype', newerType.id ?? null);
     if (all.length >= 5) {
       return all.map((e) => e.price);
     }

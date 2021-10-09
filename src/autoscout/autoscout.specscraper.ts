@@ -112,9 +112,9 @@ export class ASSpecScraper extends SpecScraper {
     };
 
     const ccm = () => {
-      if (lookFor($('dt'), Keywords.TRANSMISSION).length > 0) {
+      if (lookFor($('dt'), Keywords.CCM).length > 0) {
         return Number(
-          lookFor($('dt'), Keywords.TRANSMISSION)
+          lookFor($('dt'), Keywords.CCM)
             .next()
             .text()
             .match(numberPattern)!
