@@ -3,19 +3,19 @@ export interface IVehicleEntry {
   platform: string;
   platformId: string;
   link: string;
-};
+}
 
 export interface IVehicleSpec {
   id: number;
-  km?: number;
-  kw?: number;
+  km: number;
+  kw: number;
   fuel?: string;
   transmission?: string;
   ccm?: number;
-  price?: number;
-  city?: string;
-  zipcode?: number;
-};
+  price: number;
+  city: string;
+  zipcode: number;
+}
 
 export interface IVehicleAlertFilters {
   id: number;
@@ -45,4 +45,5 @@ export interface IVehicleType {
 
 export type IVehicleTypePreview = Omit<IVehicleType, 'id'>;
 
-export type IVehicleFullData = IVehicleSpec & IVehicleType & {cartype: number}
+export type IVehicleFullData = IVehicleSpec &
+  IVehicleType & { cartype: number };
