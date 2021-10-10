@@ -219,22 +219,22 @@ export abstract class SpecScraper {
       .first();
     if (!type) return;
     const olderType = await this.dbService
-      .knex('cartype')
+      .knex<IVehicleType>('cartype')
       .select('id')
       .where({ make: type.make, model: type.model, age: type.age - 1 })
       .first();
     const newerType = await this.dbService
-      .knex('cartype')
+      .knex<IVehicleType>('cartype')
       .select('id')
       .where({ make: type.make, model: type.model, age: type.age + 1 })
       .first();
     const all = await this.dbService
-      .knex('carspec')
+      .knex<IVehicleSpec>('carspec')
       .where('cartype', typeId)
-      .orWhere('cartype', olderType.id ?? null)
-      .orWhere('cartype', newerType.id ?? null);
+      .orWhere('cartype', olderType?.id ?? null)
+      .orWhere('cartype', newerType?.id ?? null);
     if (all.length >= 5) {
-      return all.map((e) => e.price);
+      return all.map((e) => e.price ?? 0);
     }
   }
 
