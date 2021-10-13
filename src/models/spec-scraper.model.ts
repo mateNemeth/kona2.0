@@ -132,9 +132,9 @@ export abstract class SpecScraper {
 
   private async getTypeId(entry: IVehicleTypePreview): Promise<number> {
     let type = await this.dbService
-      .knex('cartype')
-      .first()
-      .where({ make: entry.make, model: entry.model, age: entry.age });
+      .knex<IVehicleType>('cartype')
+      .where({ make: entry.make, model: entry.model, age: entry.age })
+      .first();
     if (!type) {
       Logger.log(
         this.serviceName,
@@ -145,16 +145,23 @@ export abstract class SpecScraper {
           age: entry.age,
         })}`
       );
-      type = await this.dbService
-        .knex('cartype')
-        .insert({ make: entry.make, model: entry.model, age: entry.age })
-        .returning('*')
-        .first();
+      type = (
+        await this.dbService
+          .knex<IVehicleType>('cartype')
+          .insert({ make: entry.make, model: entry.model, age: entry.age })
+          .returning('*')
+      )[0];
     } else {
       Logger.log(
         this.serviceName,
         'info',
         `Type already exist, returning it: ${JSON.stringify(type)}`
+      );
+    }
+    if (!type) {
+      Logger.log(this.serviceName, 'error', 'Something went wrong...');
+      throw new Error(
+        "Something went wrong, type not found and/or couldn't be inserted"
       );
     }
     return type.id;
