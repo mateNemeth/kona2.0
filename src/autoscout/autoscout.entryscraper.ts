@@ -2,6 +2,9 @@ import * as cheerio from 'cheerio';
 import { EntryScraper } from '../models/entry-scraper.model';
 import { IVehicleEntry } from '../interfaces/interfaces';
 export class ASEntryScraper extends EntryScraper {
+  readonly uuidRegex = new RegExp(
+    /[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/
+  );
   serviceName = 'AS EntryScraper';
   platformUrl = 'https://www.autoscout24.hu';
   queryUrl =
@@ -11,22 +14,23 @@ export class ASEntryScraper extends EntryScraper {
   async processData(data: string) {
     const $ = cheerio.load(data);
     const response: Omit<IVehicleEntry, 'id'>[] = [];
-    $('.cldt-summary-full-item').each((i, element) => {
-      const entryId = $(element).attr('id')!.split('-');
-      const platformId = entryId.slice(1, entryId.length).join('-');
-      const link = `/ajanlat/${
-        $(element).find($('a')).attr('href')!.split('/')[2]
-      }`;
+    $('[data-testid="list-item"]').each((i, element) => {
+      const link = $(element).find('a').attr('href');
+      if (link) {
+        const platformMatch = link.match(this.uuidRegex);
+        if (platformMatch === null)
+          throw new Error("Error, RegExp didn't find uuid in link: " + link);
 
-      const vehicle = {
-        platform: this.platformUrl,
-        platformId,
-        link,
-      };
+        const vehicle = {
+          platform: this.platformUrl,
+          platformId: platformMatch[0],
+          link,
+        };
 
-      response.unshift(vehicle);
+        response.unshift(vehicle);
+      }
     });
 
     return response;
   }
-};
+}
