@@ -53,7 +53,11 @@ export abstract class SpecScraper {
       await Utils.sleep(this.sleepTime * 60 * 1000);
       return this.runScraper();
     } catch (e) {
-      Logger.log(this.serviceName, 'error', e.stack);
+      const errorMsg =
+        e instanceof Error
+          ? e.stack ?? 'Something went wrong'
+          : 'Something went wrong';
+      Logger.log(this.serviceName, 'error', errorMsg);
       this.errorCount++;
       if (this.errorCount < this.maxErrorCount) {
         await Utils.sleep(20000);
@@ -94,10 +98,12 @@ export abstract class SpecScraper {
     try {
       raw = await Axios.get(`${entry.platform}${entry.link}`);
     } catch (e) {
-      if (e.response?.status === 410 || e.response?.status === 404) {
-        await this.removeEntry(entry.id);
-        Logger.log(this.serviceName, 'warn', `Entry doesn't exist anymore.`);
-        return this.runScraper();
+      if (Axios.isAxiosError(e)) {
+        if (e.response?.status === 410 || e.response?.status === 404) {
+          await this.removeEntry(entry.id);
+          Logger.log(this.serviceName, 'warn', `Entry doesn't exist anymore.`);
+          return this.runScraper();
+        }
       }
 
       this.slowDown();
