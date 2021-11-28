@@ -14,7 +14,7 @@ export class ASEntryScraper extends EntryScraper {
   async processData(data: string) {
     const $ = cheerio.load(data);
     const response: Omit<IVehicleEntry, 'id'>[] = [];
-    $('[data-item-name="listing-summary-container"]').each((i, element) => {
+    $('.cldt-summary-full-item').each((i, element) => {
       const link = $(element).find('a').attr('href');
       if (link) {
         const platformMatch = link.match(this.uuidRegex);
