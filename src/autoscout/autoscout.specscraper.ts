@@ -3,14 +3,15 @@ import { SpecScraper } from '../models/spec-scraper.model';
 import { IVehicleSpec, IVehicleTypePreview } from '../interfaces/interfaces';
 
 export enum Keywords {
-  MAKE = 'Márka',
-  MODEL = 'Modell',
+  YEAR = 'Első forgalomba helyezés',
   FUEL = 'Üzemanyag',
-  TRANSMISSION = 'Váltó típusa',
+  TRANSMISSION = 'A sebességváltó típusa',
   CCM = 'Hengerűrtartalom',
+  KW = 'Teljesítmény',
+  KM = 'Kilométeróra állása',
 }
 
-const diesel = ['Dízel (Particulate Filter)', 'Dízel'];
+const diesel = ['Dízel (Particulate Filter)', 'Dízel', 'Dízel (Részecskeszűrő)'];
 const petrol = [
   'Benzin',
   'Benzin (Particulate Filter)',
@@ -21,6 +22,7 @@ const petrol = [
   'Super Plus 98-as',
   'E10-es 91-es normálbenzin',
   'Super Plus E10 98-as',
+  '91-es normálbenzin (Részecskeszűrő)',
 ];
 
 export class ASSpecScraper extends SpecScraper {
@@ -40,41 +42,29 @@ export class ASSpecScraper extends SpecScraper {
       keyword: string
     ): cheerio.Cheerio => {
       return $(element).filter(function (i, el) {
-        return $(el).text().trim() === keyword;
+        return $(el).text().trim() === keyword ?? $(el).text().trim().includes(keyword);
       });
     };
 
-    const make = $(`dt:contains('${Keywords.MAKE}')`).next().text().trim();
-    const model = $(`dt:contains('${Keywords.MODEL}')`).next().text().trim();
-    const age = Number(
-      $('.sc-font-l.cldt-stage-primary-keyfact')
-        .eq(4)
-        .text()
-        .match(numberPattern)![1] ?? 0
-    );
+    const make = $('h1').children('div').first().children('span').first().text().trim();
+    const model = $('h1').children('div').first().children('span').last().text().trim();
+
+    const age = Number(lookFor($('div'), Keywords.YEAR)?.next().next().text().split('/')?.[1] || 0);
 
     if (!age || !model || !make) {
       await this.removeEntry(id);
       return this.runScraper();
     }
 
-    const km = () => {
-      const result = $('.sc-font-l.cldt-stage-primary-keyfact')
-        .eq(3)
-        .text()
-        .match(numberPattern);
-
-      return result && result.length > 1 ? Number(result.join('')) : 0;
-    };
+    const km = Number(lookFor($('div'), Keywords.KM)?.next().next().next().text()?.split(' ')?.[0]?.split('.')?.join('') ?? 0);
 
     const kw = () => {
-      const result = Number(
-        $('.sc-font-l.cldt-stage-primary-keyfact')
-          .eq(5)
-          .text()
-          .match(numberPattern)
-      );
-      return result ? result : 0;
+      const field = lookFor($('dt'), Keywords.KW);
+      if (field) {
+        const match = field.next().text().trim().split(' ')?.[0];
+        return Number(match ?? 0);
+      }
+      return 0;
     };
 
     const fuel = () => {
@@ -125,23 +115,25 @@ export class ASSpecScraper extends SpecScraper {
       }
     };
 
-    const price = Number(
-      $('.cldt-price').eq(1).find('h2').text().match(numberPattern)?.join('')
-    );
+    const price = Number($('span').filter(function (i, el) {
+      return $(el).text().trim().includes('€');
+    }).text().split(',')?.[0].split(' ')?.[1]?.split('.').join('') || 0);
 
-    const city = $('.cldt-stage-vendor-text.sc-font-s')
-      .find('span.sc-font-bold')
-      .eq(0)
-      .text();
+    const address = $('a').filter(function (i, el) {
+      return $(el).text().trim().match(/(.*)([0-9]{4})(\s)(.*)(,\s[A-Z]{2})/) !== null
+    }).text().match(/(.*)([0-9]{4})(\s)(.*)(,\s[A-Z]{2})/);
 
-    const zipcode = Number(
-      $("div[data-item-name='vendor-contact-city']").eq(0).text().split(' ')[0]
-    );
+    const zipcode = Number(address?.[2] || 0);
+    const city = address?.[4] || '';
+
+    if (!zipcode || !city) {
+      console.log('found one')
+    }
 
     return {
       vehicleSpec: {
         id,
-        km: km(),
+        km,
         kw: kw(),
         fuel: fuel(),
         transmission: transmission(),

@@ -11,4 +11,4 @@ const Notifications = new NotificationManager([Mailer]);
 
 ScoutEntryScraper.runScraper();
 ScoutSpecScraper.runScraper();
-Notifications.processNotifications();
+// Notifications.processNotifications();
